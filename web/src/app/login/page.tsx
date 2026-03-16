@@ -1,15 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { signIn } from 'next-auth/react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { BrainCircuit } from 'lucide-react'
 
 const loginSchema = z.object({
@@ -19,10 +27,12 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
-  
+  const successMessage = searchParams.get('message')
+
   const {
     register,
     handleSubmit,
@@ -35,28 +45,35 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setError(null)
     try {
-      console.log('Login attempt with:', data)
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      
-      router.push('/dashboard')
+      const result = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Invalid email or password')
+      } else {
+        router.push('/dashboard')
+      }
     } catch {
-      setError('Invalid email or password. Please try again.')
+      setError('An error occurred. Please try again.')
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <div className="bg-muted/40 flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center justify-center space-y-2">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <BrainCircuit className="h-6 w-6 text-primary" />
+            <BrainCircuit className="text-primary h-6 w-6" />
             <span className="text-xl tracking-tight">ResumeIQ</span>
           </Link>
         </div>
-        
+
         <Card className="shadow-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
+            <CardTitle className="text-center text-2xl">Welcome back</CardTitle>
             <CardDescription className="text-center">
               Enter your email and password to access your account
             </CardDescription>
@@ -64,7 +81,7 @@ export default function LoginPage() {
           <CardContent>
             <form id="login-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium leading-none">
+                <label htmlFor="email" className="text-sm leading-none font-medium">
                   Email
                 </label>
                 <Input
@@ -74,17 +91,15 @@ export default function LoginPage() {
                   {...register('email')}
                   aria-invalid={!!errors.email}
                 />
-                {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email.message}</p>
-                )}
+                {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-sm font-medium leading-none">
+                  <label htmlFor="password" className="text-sm leading-none font-medium">
                     Password
                   </label>
-                  <Link href="#" className="text-xs text-muted-foreground hover:underline">
+                  <Link href="#" className="text-muted-foreground text-xs hover:underline">
                     Forgot password?
                   </Link>
                 </div>
@@ -96,12 +111,18 @@ export default function LoginPage() {
                   aria-invalid={!!errors.password}
                 />
                 {errors.password && (
-                  <p className="text-xs text-destructive">{errors.password.message}</p>
+                  <p className="text-destructive text-xs">{errors.password.message}</p>
                 )}
               </div>
 
+              {successMessage && (
+                <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
+                  {successMessage}
+                </div>
+              )}
+
               {error && (
-                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                <div className="bg-destructive/15 text-destructive rounded-md p-3 text-sm">
                   {error}
                 </div>
               )}
@@ -112,9 +133,9 @@ export default function LoginPage() {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-center text-sm">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="font-semibold text-primary hover:underline">
+              <Link href="/signup" className="text-primary font-semibold hover:underline">
                 Sign up
               </Link>
             </div>
@@ -122,5 +143,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   )
 }

@@ -224,22 +224,13 @@ export default function HomePage() {
 
             <div className="flex items-center gap-3 text-muted-foreground">
               <Link
-                href="https://github.com"
+                href="https://github.com/saksham003/ResumeIQ"
                 aria-label="GitHub"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors hover:text-foreground"
               >
                 <Github className="h-4 w-4" />
-              </Link>
-              <Link
-                href="https://twitter.com"
-                aria-label="Twitter"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors hover:text-foreground"
-              >
-                <Twitter className="h-4 w-4" />
               </Link>
             </div>
           </div>
