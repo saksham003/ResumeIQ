@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  resumes       Resume[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @db.Uuid
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model Resume {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  user           User             @relation(fields: [userId], references: [id])
+  fileUrl        String
+  status         String           // queued, processing, completed, failed
+  createdAt      DateTime         @default(now())
+  resumeAnalysis ResumeAnalysis[]
+  jobMatches     JobMatch[]
+}
+
+model ResumeAnalysis {
+  id              String   @id @default(uuid()) @db.Uuid
+  resumeId        String   @db.Uuid
+  resume          Resume   @relation(fields: [resumeId], references: [id])
+  overallScore    Int?
+  strengths       Json?
+  weaknesses      Json?
+  suggestions     Json?
+  missingKeywords Json?
+  createdAt       DateTime @default(now())
+}
+
+model JobMatch {
+  id             String   @id @default(uuid()) @db.Uuid
+  resumeId       String   @db.Uuid
+  resume         Resume   @relation(fields: [resumeId], references: [id])
+  jobDescription String
+  matchScore     Int?
+  matchingSkills Json?
+  missingSkills  Json?
+  suggestions    Json?
+  createdAt      DateTime @default(now())
+}

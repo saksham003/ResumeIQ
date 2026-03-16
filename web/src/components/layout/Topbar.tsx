@@ -15,13 +15,10 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { SidebarContent } from '@/components/layout/Sidebar'
 import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { User } from 'next-auth'
 
 interface TopbarProps {
-  user?: {
-    name: string
-    email: string
-    avatarUrl?: string
-  }
+  user?: User
 }
 
 export function Topbar({ user }: TopbarProps) {
@@ -44,18 +41,18 @@ export function Topbar({ user }: TopbarProps) {
         </SheetContent>
       </Sheet>
 
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-background px-4">
+      <header className="bg-background flex h-14 shrink-0 items-center gap-3 border-b px-4">
         <button
           id="mobile-sidebar-toggle"
           aria-label="Open navigation menu"
           onClick={() => setMobileOpen(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground lg:hidden"
+          className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex h-8 w-8 items-center justify-center rounded-md transition-colors lg:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
 
         <div className="flex items-center gap-1.5 lg:hidden">
-          <BrainCircuit className="h-5 w-5 text-primary" />
+          <BrainCircuit className="text-primary h-5 w-5" />
           <span className="text-sm font-semibold tracking-tight">ResumeIQ</span>
         </div>
 
@@ -65,7 +62,7 @@ export function Topbar({ user }: TopbarProps) {
           <button
             id="notifications-btn"
             aria-label="Notifications"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex h-8 w-8 items-center justify-center rounded-md transition-colors"
           >
             <Bell className="h-4 w-4" />
           </button>
@@ -76,11 +73,11 @@ export function Topbar({ user }: TopbarProps) {
             <DropdownMenuTrigger
               id="user-menu-trigger"
               aria-label="Open user menu"
-              className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-accent focus-visible:outline-none"
+              className="hover:bg-accent flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors focus-visible:outline-none"
             >
               <Avatar className="h-7 w-7">
-                <AvatarImage src={user?.avatarUrl} alt={displayName} />
-                <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                <AvatarImage src={user?.image || undefined} alt={displayName} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -91,9 +88,9 @@ export function Topbar({ user }: TopbarProps) {
 
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-medium leading-none">{displayName}</p>
+                <p className="text-sm leading-none font-medium">{displayName}</p>
                 {user?.email && (
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{user.email}</p>
+                  <p className="text-muted-foreground mt-1 truncate text-xs">{user.email}</p>
                 )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
