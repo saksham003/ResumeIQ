@@ -58,10 +58,10 @@ export default function HomePage() {
             </Link>
             <Link
               id="nav-upload-btn"
-              href="/upload"
+              href="/login"
               className={cn(buttonVariants({ size: 'sm' }))}
             >
-              Upload Resume
+              Log in
             </Link>
           </nav>
         </div>
