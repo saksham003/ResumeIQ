@@ -5,7 +5,7 @@ import { getToken } from 'next-auth/jwt'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const protectedRoutes = ['/dashboard', '/resumes']
+  const protectedRoutes = ['/dashboard', '/resumes', '/upload', '/analysis']
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
 
   if (isProtectedRoute) {
