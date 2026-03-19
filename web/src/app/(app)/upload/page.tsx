@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useXhrUpload } from '@/hooks/use-xhr-upload'
 import { UploadCloud, File, AlertCircle, CheckCircle2, FileText, Loader2, X } from 'lucide-react'
 
 import {
@@ -18,13 +19,39 @@ import { cn } from '@/lib/utils'
 
 type UploadState = 'IDLE' | 'DRAGGING' | 'UPLOADING' | 'PROCESSING' | 'COMPLETED' | 'ERROR'
 
+async function getUploadUrl(filename: string): Promise<{ uploadUrl: string; key: string }> {
+  const res = await fetch('/api/resume/upload-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.error || 'Failed to get upload URL')
+  }
+  return res.json()
+}
+
+async function confirmUpload(key: string): Promise<{ resumeId: string }> {
+  const res = await fetch('/api/resume/confirm-upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.error || 'Failed to confirm upload')
+  }
+  return res.json()
+}
+
 export default function UploadPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { progress, uploadFile } = useXhrUpload()
 
   const [file, setFile] = useState<File | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('IDLE')
-  const [progress, setProgress] = useState(0)
   const [processingStatus, setProcessingStatus] = useState<
     'Queued' | 'Processing' | 'Completed' | null
   >(null)
@@ -95,7 +122,6 @@ export default function UploadPage() {
   const clearFile = () => {
     setFile(null)
     setUploadState('IDLE')
-    setProgress(0)
     setProcessingStatus(null)
     setErrorMsg(null)
     if (fileInputRef.current) {
@@ -108,73 +134,16 @@ export default function UploadPage() {
 
     setUploadState('UPLOADING')
     setProcessingStatus('Queued')
-    setProgress(0)
     setErrorMsg(null)
 
     try {
-      const uploadUrlResponse = await fetch('/api/resume/upload-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filename: file.name }),
-      })
-
-      if (!uploadUrlResponse.ok) {
-        const error = await uploadUrlResponse.json()
-        throw new Error(error.error || 'Failed to get upload URL')
-      }
-
-      const { uploadUrl, key } = await uploadUrlResponse.json()
-
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100)
-            setProgress(percentComplete)
-          }
-        })
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status === 200) {
-            resolve()
-          } else {
-            reject(new Error('Upload failed'))
-          }
-        })
-
-        xhr.addEventListener('error', () => {
-          reject(new Error('Upload failed'))
-        })
-
-        xhr.open('PUT', uploadUrl, true)
-        xhr.setRequestHeader('Content-Type', 'application/pdf')
-        xhr.send(file)
-      })
-
-      const confirmResponse = await fetch('/api/resume/confirm-upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ key }),
-      })
-
-      if (!confirmResponse.ok) {
-        const error = await confirmResponse.json()
-        throw new Error(error.error || 'Failed to confirm upload')
-      }
-
-      const { resumeId } = await confirmResponse.json()
+      const { uploadUrl, key } = await getUploadUrl(file.name)
+      await uploadFile(uploadUrl, file)
+      const { resumeId } = await confirmUpload(key)
 
       setUploadState('COMPLETED')
       setProcessingStatus('Completed')
-
-      setTimeout(() => {
-        router.push(`/resumes/${resumeId}`)
-      }, 1500)
+      // setTimeout(() => router.push(`/resumes/${resumeId}`), 1500)
     } catch (error) {
       console.error('Upload error:', error)
       setErrorMsg(error instanceof Error ? error.message : 'Upload failed')
