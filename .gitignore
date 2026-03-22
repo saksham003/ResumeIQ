@@ -40,3 +40,6 @@ Thumbs.db
 
 # Misc
 *.log
+
+# Worker build output
+worker/dist/
