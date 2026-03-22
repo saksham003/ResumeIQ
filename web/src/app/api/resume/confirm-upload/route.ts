@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { addJob, JobType } from '@/lib/queue'
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -28,6 +29,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    await addJob(JobType.PROCESS_RESUME, {
+      resumeId: resume.id,
+      userId: session.user.id,
+      fileUrl,
+    })
+
     return NextResponse.json({
       success: true,
       resumeId: resume.id,
@@ -40,3 +47,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
