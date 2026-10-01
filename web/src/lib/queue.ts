@@ -4,11 +4,11 @@ const connection = {
   host: process.env.REDIS_HOST || "127.0.0.1",
   port: Number(process.env.REDIS_PORT || 6379),
   ...(process.env.REDIS_PASSWORD ? { password: process.env.REDIS_PASSWORD } : {}),
+  tls: process.env.REDIS_TLS === "true" ? {} : undefined,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
 };
 
-// ---------------------------------------------------------------------------
-// Shared default job options — single source of truth for retry behaviour
-// ---------------------------------------------------------------------------
 export const QUEUE_DEFAULT_JOB_OPTIONS: JobsOptions = {
   attempts: 3,
   backoff: {

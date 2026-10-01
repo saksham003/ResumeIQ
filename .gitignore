@@ -41,5 +41,11 @@ Thumbs.db
 # Misc
 *.log
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Worker build output
 worker/dist/

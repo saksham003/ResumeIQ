@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import { addJob, JobType } from '@/lib/queue'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { s3Client } from '@/lib/aws/s3'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +22,14 @@ export async function POST(request: NextRequest) {
     }
 
     const bucket = process.env.AWS_S3_BUCKET!
+
     const fileUrl = `https://${bucket}.s3.amazonaws.com/${key}`
+
+    const presignedUrl = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({ Bucket: bucket, Key: key }),
+      { expiresIn: 3600 },
+    )
 
     const resume = await prisma.resume.create({
       data: {
@@ -32,7 +42,7 @@ export async function POST(request: NextRequest) {
     await addJob(JobType.PROCESS_RESUME, {
       resumeId: resume.id,
       userId: session.user.id,
-      fileUrl,
+      fileUrl: presignedUrl,
     })
 
     return NextResponse.json({
@@ -47,4 +57,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
